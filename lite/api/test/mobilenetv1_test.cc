@@ -49,6 +49,19 @@ void TestModel(const std::vector<Place>& valid_places,
     data[i] = 1;
   }
 
+  //cyh
+//  auto* input_tensor = predictor.GetInput(0);
+//  input_tensor->Resize(DDim(
+//      std::vector<DDim::value_type>({FLAGS_N, FLAGS_C, FLAGS_H, FLAGS_W})));
+//  auto* data = input_tensor->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+//  auto item_size = input_tensor->dims().production();
+//  auto* mapped_x = static_cast<float*>(
+//      TargetWrapperCL::Map(data, 0, sizeof(float) * item_size));
+//  for (int i = 0; i < item_size; i++) {
+//    mapped_x[i] = 1;
+//  }
+  //cyh
+
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor.Run();
   }
@@ -84,6 +97,15 @@ void TestModel(const std::vector<Place>& valid_places,
   auto* out = predictor.GetOutput(0);
   const auto* pdata = out->data<float>();
   int step = 50;
+
+//  auto* out = predictor.GetOutput(0);
+//  auto* out_data = out->data<float, cl::Buffer>();
+//  int step = 50;
+//  std::vector<float> pdata(out->dims().production());
+//  TargetWrapperCL::MemcpySync(
+//      pdata.data(), out_data, pdata.size() * sizeof(float), IoDirection::DtoH);
+
+
 
   // Get target and check result
   VLOG(1) << "valid_places.size():" << valid_places.size();
@@ -167,13 +189,13 @@ TEST(MobileNetV1, test_npu) {
 }
 #endif  // LITE_WITH_NPU
 
-TEST(MobileNetV1, test_arm) {
-  std::vector<Place> valid_places({
-      Place{TARGET(kARM), PRECISION(kFloat)},
-  });
-
-  TestModel(valid_places);
-}
+//TEST(MobileNetV1, test_arm) {
+//  std::vector<Place> valid_places({
+//      Place{TARGET(kARM), PRECISION(kFloat)},
+//  });
+//
+//  TestModel(valid_places);
+//}
 
 #ifdef LITE_WITH_OPENCL
 TEST(MobileNetV1, test_opencl) {

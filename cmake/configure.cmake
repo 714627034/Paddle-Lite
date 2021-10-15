@@ -189,6 +189,10 @@ if (LITE_WITH_OPENCL)
     add_definitions("-DLITE_WITH_OPENCL")
 endif()
 
+if (LITE_WITH_OPENCL_FEED_FETCH)
+    add_definitions("-DLITE_WITH_OPENCL_FEED_FETCH")
+endif()#cyh
+
 if (LITE_WITH_METAL)
     find_library(METAL_LIBRARY Metal REQUIRED)
     find_library(FOUNDATION_LIBRARY Foundation)

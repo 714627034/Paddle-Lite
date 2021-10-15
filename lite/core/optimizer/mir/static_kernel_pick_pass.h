@@ -191,6 +191,14 @@ class StaticKernelPickPass : public mir::StmtPass {
       }
     }
 
+#if !defined(LITE_WITH_OPENCL_FEED_FETCH)
+    VLOG(1)<<"哈利路亚";
+    if(instruct.op_type()=="feed"||instruct.op_type()=="fetch"){
+         if(kernel.target()==TargetType::kOpenCL)
+           final_score=0;
+    }
+#endif
+
     VLOG(4) << "[score(final)]:" << final_score;
     VLOG(2) << "-------- pick summary for " << instruct.op_type()
             << " --------";

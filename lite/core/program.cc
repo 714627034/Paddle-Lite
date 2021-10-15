@@ -466,7 +466,7 @@ void RuntimeProgram::Run() {
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL) && !(defined(LITE_WITH_OPENCL_FEED_FETCH) &&defined(LITE_WITH_OPENCL))
     if (inst.is_feed_fetch_op()) continue;
 #endif
 #ifdef LITE_WITH_NVTX
@@ -696,6 +696,9 @@ void Instruction::Run() {
     return;
   }
 
+#if defined(LITE_WITH_OPENCL_FEED_FETCH)
+  if(op_->Type()!="feed" && op_->Type()!="fetch")
+#endif
   op_->InferShape();
   kernel_->Launch();
   has_run_ = true;
