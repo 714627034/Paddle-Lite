@@ -31,6 +31,9 @@ class FeedOp : public OpLite {
   }
 
   bool InferShapeImpl() const override {
+
+    if(param_.feed_list->empty())//cyh 在打开opencl feed开关的前提下，是需要走feed kernel的，但是因为并没有实际输入，所以无法推测输出形状。
+      return true;
     auto input_tensor = (*param_.feed_list)[param_.col];
     auto output_tensor = param_.out;
     DDim output_dims = output_tensor->dims();

@@ -696,9 +696,9 @@ void Instruction::Run() {
     return;
   }
 
-#if defined(LITE_WITH_OPENCL_FEED_FETCH)
-  if(op_->Type()!="feed" && op_->Type()!="fetch")
-#endif
+//#if defined(LITE_WITH_OPENCL_FEED_FETCH)
+//  if(op_->Type()!="feed" && op_->Type()!="fetch")
+//#endif
   op_->InferShape();
   kernel_->Launch();
   has_run_ = true;
