@@ -45,6 +45,8 @@ enum class L3CacheSetMethod {
 // return true if current device supports OpenCL model
 LITE_API bool IsOpenCLBackendValid(bool check_fp16_valid = false);
 
+LITE_API int lite_GetGpuType();
+
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
   explicit Tensor(const void* raw);

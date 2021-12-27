@@ -73,6 +73,41 @@ bool IsOpenCLBackendValid(bool check_fp16_valid) {
   return opencl_valid;
 }
 
+int lite_GetGpuType(){
+  if(IsOpenCLBackendValid()==0)
+    return -1;
+  paddle::lite::CLRuntime::Global()->GetDeviceInfo();
+ auto it=paddle::lite::CLRuntime::Global()->GetGpuType();
+ int gpu_type=0;
+ switch (it) {
+   case GpuType::UNKNOWN:
+     LOG(INFO)<<"gpu_type:UNKNOWN";
+     gpu_type=0;
+     break;
+   case GpuType::QUALCOMM_ADRENO:
+     LOG(INFO)<<"gpu_type:QUALCOMM_ADRENO";
+     gpu_type=1;
+     break;
+   case GpuType::IMAGINATION_POWERVR:
+     LOG(INFO)<<"gpu_type:IMAGINATION_POWERVR";
+     gpu_type=3;
+     break;
+   case GpuType::ARM_MALI:
+     LOG(INFO)<<"gpu_type:ARM_MALI";
+     gpu_type=2;
+     break;
+   case GpuType::OTHERS:
+     LOG(INFO)<<"gpu_type:OTHERS";
+     gpu_type=4;
+     break;
+   default :
+     LOG(INFO)<<"gpu_type:it is bug";
+     gpu_type=-1;
+     break;
+ }
+ return gpu_type;
+}
+
 Tensor::Tensor(void *raw) : raw_tensor_(raw) {}
 
 // TODO(Superjomn) refine this by using another `const void* const_raw`;
