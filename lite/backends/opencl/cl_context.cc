@@ -33,11 +33,22 @@ void CLContext::AddKernel(const std::string &kernel_name,
                           const std::string &file_name,
                           const std::string &options,
                           const std::string &time_stamp) {
+  std::string file_name_cyh=file_name;
+  for(int i=0;i<file_name.size();i++){
+    if(file_name[i]=='/'){
+      VLOG(1)<<"file_name:"<<file_name;
+      VLOG(1)<<"截取字符串:"<<file_name.substr(i+1);
+      std::string en=file_name.substr(i+1);
+      std::string st=file_name.substr(0,i+1);
+      file_name_cyh=st+kernel_name+"_"+en;
+    }
+  }
+  VLOG(1)<<"file_name_cyh: "<<file_name_cyh;
   cl_int status{CL_SUCCESS};
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- to get program " << file_name << " --- ";
 #endif
-  auto program = CLRuntime::Global()->GetProgram(file_name, options);
+  auto program = CLRuntime::Global()->GetProgram(file_name_cyh, options);
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- end get program --- ";
   VLOG(3) << " --- to create kernel: " << kernel_name << " --- ";

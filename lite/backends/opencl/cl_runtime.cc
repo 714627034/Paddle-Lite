@@ -355,7 +355,9 @@ bool CLRuntime::CheckFromSource(const std::string& file_name,
 
 std::unique_ptr<cl::Program> CLRuntime::CreateProgramFromSource(
     const cl::Context& context, std::string file_name) {
-  auto cl_file = opencl_kernels_files.find(file_name);
+//  auto cl_file = opencl_kernels_files.find(file_name);
+  auto cl_file = opencl_kernels_files_cyh.find(file_name);
+
   std::string content(cl_file->second.begin(), cl_file->second.end());
   cl::Program::Sources sources;
   sources.push_back(content);

@@ -75,6 +75,8 @@ namespace lite {
 
 extern const std::map<std::string, std::vector<unsigned char>>
     opencl_kernels_files;
+extern const std::map<std::string, std::vector<unsigned char>>
+    opencl_kernels_files_cyh;
 
 class CLRuntime {
  public:
@@ -138,8 +140,11 @@ class CLRuntime {
                  << static_cast<size_t>(p);
     }
   }
-
+  void set_kernel_optimization(lite_api::CLKernelOptimization p= lite_api::CL_KERNEL_UNSPLIT){
+    kernel_optimization=p;
+  }
   lite_api::CLPrecisionType get_precision() { return precision_; }
+  lite_api::CLKernelOptimization  get_optimization(){return kernel_optimization;}
 
   void SetBinaryPathName(const std::string& path, const std::string& name) {
     binary_path_name_.clear();
@@ -330,7 +335,7 @@ class CLRuntime {
   // CLPrecisionType
   // 0 - AUTO, 1 - fp32, 2 - fp16
   lite_api::CLPrecisionType precision_{lite_api::CL_PRECISION_AUTO};
-
+  lite_api::CLKernelOptimization kernel_optimization{lite_api::CL_KERNEL_UNSPLIT};
   std::map<std::string, std::unique_ptr<cl::Program>> programs_;
   std::map<std::string, cl::Program::Binaries> programs_precompiled_binary_;
   std::map<std::string, std::vector<int>> tuned_lwss_map_;
