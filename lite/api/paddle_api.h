@@ -536,6 +536,7 @@ class LITE_API MobileConfig : public ConfigBase {
   // whether to load data from memory. Model data will be loaded from memory
   // buffer if model_from_memory_ is true.
   bool model_from_memory_{false};
+  bool model_verification{false};
 
   // model data readed from file or memory buffer in combined format.
   std::string lite_model_file_;
@@ -550,12 +551,15 @@ class LITE_API MobileConfig : public ConfigBase {
   // buffer
   void set_model_from_file(const std::string& x);
   void set_model_from_buffer(const std::string& x);
+  void set_model_verification(const bool x);
+
   // return model data in lite_model_file_, which is in combined format.
   const std::string& lite_model_file() const { return lite_model_file_; }
 
   // return model_from_memory_, which indicates whether to load model from
   // memory buffer.
   bool is_model_from_memory() const { return model_from_memory_; }
+  bool is_model_verification() const {return model_verification;}
   // note: `model_from_memory` has the same effect as `is_model_from_memory`,
   // but is_model_from_memory is recommended and `model_from_memory` will be
   // abandoned in v3.0.

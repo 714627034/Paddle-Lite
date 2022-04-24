@@ -201,6 +201,10 @@ function(lite_cc_library TARGET)
     if(NOT WIN32)
       target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
     endif()
+
+    if (ARM_TARGET_ARCH_ABI MATCHES  "armv8")
+        target_compile_options(${TARGET} PRIVATE "-march=armv8-a+crc+crypto")
+    endif ()
     # collect targets need to compile for lite
     if (args_SRCS AND NOT args_EXCLUDE_COMPILE_DEPS)
         add_dependencies(lite_compile_deps ${TARGET})

@@ -17,6 +17,7 @@
 #include <memory>
 #include <utility>
 #include "lite/core/optimizer/mir/dot.h"
+#include "verfication/fast_model_verfication.h"
 #include "lite/core/scope.h"
 #include "lite/utils/string.h"
 namespace paddle {
@@ -47,7 +48,9 @@ void OptBase::SetModelType(std::string optimize_out_type) {
 void OptBase::SetQuantModel(bool quant_model) {
   opt_config_.set_quant_model(quant_model);
 }
-
+void OptBase::SetVerificationModel(bool x) {
+  is_verification_model=x;
+}
 void OptBase::SetQuantType(const std::string& quant_type) {
   if (quant_type == "QUANT_INT8") {
     opt_config_.set_quant_type(lite_api::QuantType::QUANT_INT8);
@@ -245,6 +248,10 @@ void OptBase::Run() {
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info_);
+    lite_out_name_+=".nb";
+    if(is_verification_model) {
+      CHECK(file_verfication::fast_model_verfication_file(lite_out_name_.data()) != -1);
+    }
   }
 }
 
@@ -434,7 +441,7 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "  Display operators in the input model\n"
       "  Arguments of optimized nb model visualization: \n"
       "        `--optimized_nb_model_path=<optimized_nb_model_dir>`\n"
-      "        "
+      "        `--verification_model=(true|false)`\n"
       "`--visualization_file_output_path=<visualization_file_output_path>`\n";
   OPT_LOG << "paddlelite opt version:" << opt_version;
   OPT_LOG << help_info;

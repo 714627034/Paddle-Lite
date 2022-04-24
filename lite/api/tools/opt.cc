@@ -71,6 +71,9 @@ DEFINE_bool(print_model_ops, false, "Print operators in the input model");
 DEFINE_bool(sparse_model,
             false,
             "Use sparse_conv_detect_pass to sparsify the 1x1conv weights.");
+DEFINE_bool(verification_model,
+false,
+"Use validation model.");
 DEFINE_double(sparse_threshold,
               0.6,
               "Set 0.6 as the lower bound for the sparse conv pass.");
@@ -161,6 +164,9 @@ int main(int argc, char** argv) {
       FLAGS_optimize_out == "") {
     opt.PrintExecutableBinHelpInfo();
     return 1;
+  }
+  if(FLAGS_verification_model){
+    opt.SetVerificationModel(true);
   }
 
   opt.Run();

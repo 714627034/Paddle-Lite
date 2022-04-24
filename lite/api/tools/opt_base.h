@@ -62,6 +62,7 @@ class LITE_API OptBase {
   void SetPassesInternal(const std::vector<std::string> &passes_internal = {});
   // transform and save the optimized model
   void Run();
+  void SetVerificationModel(bool x);
   void RunOptimize(const std::string &model_dir_path = "",
                    const std::string &model_path = "",
                    const std::string &param_path = "",
@@ -106,6 +107,7 @@ class LITE_API OptBase {
 
  private:
   bool enable_fp16_{false};
+  bool is_verification_model{false};
   CxxConfig opt_config_;
   // valid places for the optimized_model
   std::vector<Place> valid_places_;

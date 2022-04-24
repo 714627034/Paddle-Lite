@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/paddle_api.h"
+#include "verfication/fast_model_verfication.h"
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "lite/utils/io.h"
@@ -22,15 +23,17 @@ DEFINE_string(model_dir, "", "");
 
 namespace paddle {
 namespace lite_api {
-
+/*
 TEST(CxxApi, run) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({
-      Place{TARGET(kX86), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
+Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
+Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
+TARGET(kARM),
   });
-
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   LOG(INFO) << "Version: " << predictor->GetVersion();
@@ -45,146 +48,191 @@ TEST(CxxApi, run) {
     LOG(INFO) << "outputnames: " << outputs[i];
   }
   auto input_tensor = predictor->GetInputByName(inputs[0]);
-  input_tensor->Resize(std::vector<int64_t>({100, 100}));
+  input_tensor->Resize(std::vector<int64_t>({1,3,224,224}));
   auto* data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < 100 * 100; i++) {
-    data[i] = i;
+  for (int i = 0; i < 1*3*224*224; i++) {
+    data[i] = 1;
   }
 
   predictor->Run();
 
   predictor->TryShrinkMemory();
-  input_tensor->Resize(std::vector<int64_t>({100, 100}));
-  data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < 100 * 100; i++) {
-    data[i] = i;
-  }
-
-  predictor->Run();
-  auto output = predictor->GetTensor(outputs[0]);
-  auto* out = output->data<float>();
-  LOG(INFO) << out[0];
-  LOG(INFO) << out[1];
-
-  EXPECT_NEAR(out[0], 50.2132, 1e-3);
-  EXPECT_NEAR(out[1], -28.8729, 1e-3);
+//  input_tensor->Resize(std::vector<int64_t>({100, 100}));
+//  data = input_tensor->mutable_data<float>();
+//  for (int i = 0; i < 100 * 100; i++) {
+//    data[i] = i;
+//  }
+//
+//  predictor->Run();
+//  auto output = predictor->GetTensor(outputs[0]);
+//  auto* out = output->data<float>();
+//  LOG(INFO) << out[0];
+//  LOG(INFO) << out[1];
+//
+//  EXPECT_NEAR(out[0], 50.2132, 1e-3);
+//  EXPECT_NEAR(out[1], -28.8729, 1e-3);
 
   predictor->SaveOptimizedModel(FLAGS_model_dir + ".opt2");
   predictor->SaveOptimizedModel(
       FLAGS_model_dir + ".opt2.naive", LiteModelType::kNaiveBuffer, true);
+  std::string pa=FLAGS_model_dir + ".opt2.naive.nb";
+  std::cout<<"crc: "<<std::hex<<file_verfication::fast_model_verfication_file(pa.data())<<std::endl;
+
+}*/
+TEST(LightApi, run) {
+std::cout<<"第二场: "<<std::endl;
+lite_api::MobileConfig config;
+config.set_model_verification(true);
+config.set_model_from_file(FLAGS_model_dir + ".opt2.naive.nb");
+config.set_model_from_file("/data/local/tmp/mobilenet_v1_opencl.nb");
+
+// disable L3 cache on workspace_ allocating
+config.SetArmL3CacheSize(L3CacheSetMethod::kDeviceL2Cache);
+auto predictor = lite_api::CreatePaddlePredictor(config);
+
+auto inputs = predictor->GetInputNames();
+LOG(INFO) << "input size: " << inputs.size();
+for (int i = 0; i < inputs.size(); i++) {
+LOG(INFO) << "inputnames: " << inputs.at(i);
+}
+auto outputs = predictor->GetOutputNames();
+for (int i = 0; i < outputs.size(); i++) {
+LOG(INFO) << "outputnames: " << outputs.at(i);
 }
 
-TEST(CxxApi, share_external_data) {
-  lite_api::CxxConfig config;
-  config.set_model_dir(FLAGS_model_dir);
-  config.set_valid_places({
-      Place{TARGET(kX86), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
-  });
+LOG(INFO) << "Version: " << predictor->GetVersion();
 
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+auto input_tensor = predictor->GetInput(0);
+input_tensor->Resize(std::vector<int64_t>({1,3,224,224}));
+auto* data = input_tensor->mutable_data<float>();
+for (int i = 0; i < 1*3*224*224; i++) {
+data[i] = 1;
+}
 
-  auto inputs = predictor->GetInputNames();
-  auto outputs = predictor->GetOutputNames();
+predictor->Run();
 
-  std::vector<float> external_data(100 * 100);
-  for (int i = 0; i < 100 * 100; i++) {
-    external_data[i] = i;
-  }
+//predictor->TryShrinkMemory();
+//input_tensor->Resize(std::vector<int64_t>({100, 100}));
+//data = input_tensor->mutable_data<float>();
+//for (int i = 0; i < 100 * 100; i++) {
+//data[i] = i;
+//}
+//
+//predictor->Run();
+auto output = predictor->GetOutput(0);
+auto* out = output->data<float>();
+LOG(INFO) << out[0];
+LOG(INFO) << out[1];
 
-  auto input_tensor = predictor->GetInputByName(inputs[0]);
-  input_tensor->Resize(std::vector<int64_t>({100, 100}));
-  size_t memory_size = 100 * 100 * sizeof(float);
-  input_tensor->ShareExternalMemory(static_cast<void*>(external_data.data()),
-                                    memory_size,
-                                    config.valid_places()[0].target);
+EXPECT_NEAR(out[0], 50.2132, 1e-3);
+EXPECT_NEAR(out[1], -28.8729, 1e-3);
+}
 
-  predictor->Run();
+TEST(MobileConfig, LoadfromMemory) {
+// Get naive buffer
+//auto model_file = std::string(FLAGS_model_dir) + ".opt2.naive.nb";
 
-  auto output = predictor->GetTensor(outputs[0]);
-  auto* out = output->data<float>();
-  LOG(INFO) << out[0];
-  LOG(INFO) << out[1];
+std::string model_buffer = lite::ReadFile("/data/local/tmp/mobilenet_v1_opencl.nb");
+// set model buffer and run model
+lite_api::MobileConfig config;
+config.set_model_verification(true);
+config.set_model_from_buffer(model_buffer);
+// allocate 1M initial space for workspace_
+config.SetArmL3CacheSize(L3CacheSetMethod::kAbsolute, 1024 * 1024);
 
-  EXPECT_NEAR(out[0], 50.2132, 1e-3);
-  EXPECT_NEAR(out[1], -28.8729, 1e-3);
+auto predictor = lite_api::CreatePaddlePredictor(config);
+auto input_tensor = predictor->GetInput(0);
+input_tensor->Resize(std::vector<int64_t>({1,3,224,224}));
+auto* data = input_tensor->mutable_data<float>();
+for (int i = 0; i < 1*3*224*224; i++) {
+data[i] = 1;
+}
+
+predictor->Run();
+
+const auto output = predictor->GetOutput(0);
+const float* raw_output = output->data<float>();
+
+for (int i = 0; i < 10; i++) {
+LOG(INFO) << "out " << raw_output[i];
+}
 }
 
 // Demo1 for Mobile Devices :Load model from file and run
 #ifdef LITE_WITH_ARM
-TEST(LightApi, run) {
-  lite_api::MobileConfig config;
-  config.set_model_from_file(FLAGS_model_dir + ".opt2.naive.nb");
-  // disable L3 cache on workspace_ allocating
-  config.SetArmL3CacheSize(L3CacheSetMethod::kDeviceL2Cache);
-  auto predictor = lite_api::CreatePaddlePredictor(config);
-
-  auto inputs = predictor->GetInputNames();
-  LOG(INFO) << "input size: " << inputs.size();
-  for (int i = 0; i < inputs.size(); i++) {
-    LOG(INFO) << "inputnames: " << inputs.at(i);
-  }
-  auto outputs = predictor->GetOutputNames();
-  for (int i = 0; i < outputs.size(); i++) {
-    LOG(INFO) << "outputnames: " << outputs.at(i);
-  }
-
-  LOG(INFO) << "Version: " << predictor->GetVersion();
-
-  auto input_tensor = predictor->GetInput(0);
-  input_tensor->Resize(std::vector<int64_t>({100, 100}));
-  auto* data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < 100 * 100; i++) {
-    data[i] = i;
-  }
-
-  predictor->Run();
-
-  predictor->TryShrinkMemory();
-  input_tensor->Resize(std::vector<int64_t>({100, 100}));
-  data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < 100 * 100; i++) {
-    data[i] = i;
-  }
-
-  predictor->Run();
-  auto output = predictor->GetOutput(0);
-  auto* out = output->data<float>();
-  LOG(INFO) << out[0];
-  LOG(INFO) << out[1];
-
-  EXPECT_NEAR(out[0], 50.2132, 1e-3);
-  EXPECT_NEAR(out[1], -28.8729, 1e-3);
-}
-
-// Demo2 for Loading model from memory
-TEST(MobileConfig, LoadfromMemory) {
-  // Get naive buffer
-  auto model_file = std::string(FLAGS_model_dir) + ".opt2.naive.nb";
-  std::string model_buffer = lite::ReadFile(model_file);
-  // set model buffer and run model
-  lite_api::MobileConfig config;
-  config.set_model_from_buffer(model_buffer);
-  // allocate 1M initial space for workspace_
-  config.SetArmL3CacheSize(L3CacheSetMethod::kAbsolute, 1024 * 1024);
-
-  auto predictor = lite_api::CreatePaddlePredictor(config);
-  auto input_tensor = predictor->GetInput(0);
-  input_tensor->Resize(std::vector<int64_t>({100, 100}));
-  auto* data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < 100 * 100; i++) {
-    data[i] = i;
-  }
-
-  predictor->Run();
-
-  const auto output = predictor->GetOutput(0);
-  const float* raw_output = output->data<float>();
-
-  for (int i = 0; i < 10; i++) {
-    LOG(INFO) << "out " << raw_output[i];
-  }
-}
+//TEST(LightApi, run) {
+//  lite_api::MobileConfig config;
+//  config.set_model_from_file(FLAGS_model_dir + ".opt2.naive.nb");
+//  // disable L3 cache on workspace_ allocating
+//  config.SetArmL3CacheSize(L3CacheSetMethod::kDeviceL2Cache);
+//  auto predictor = lite_api::CreatePaddlePredictor(config);
+//
+//  auto inputs = predictor->GetInputNames();
+//  LOG(INFO) << "input size: " << inputs.size();
+//  for (int i = 0; i < inputs.size(); i++) {
+//    LOG(INFO) << "inputnames: " << inputs.at(i);
+//  }
+//  auto outputs = predictor->GetOutputNames();
+//  for (int i = 0; i < outputs.size(); i++) {
+//    LOG(INFO) << "outputnames: " << outputs.at(i);
+//  }
+//
+//  LOG(INFO) << "Version: " << predictor->GetVersion();
+//
+//  auto input_tensor = predictor->GetInput(0);
+//  input_tensor->Resize(std::vector<int64_t>({100, 100}));
+//  auto* data = input_tensor->mutable_data<float>();
+//  for (int i = 0; i < 100 * 100; i++) {
+//    data[i] = i;
+//  }
+//
+//  predictor->Run();
+//
+//  predictor->TryShrinkMemory();
+//  input_tensor->Resize(std::vector<int64_t>({100, 100}));
+//  data = input_tensor->mutable_data<float>();
+//  for (int i = 0; i < 100 * 100; i++) {
+//    data[i] = i;
+//  }
+//
+//  predictor->Run();
+//  auto output = predictor->GetOutput(0);
+//  auto* out = output->data<float>();
+//  LOG(INFO) << out[0];
+//  LOG(INFO) << out[1];
+//
+//  EXPECT_NEAR(out[0], 50.2132, 1e-3);
+//  EXPECT_NEAR(out[1], -28.8729, 1e-3);
+//}
+//
+//// Demo2 for Loading model from memory
+//TEST(MobileConfig, LoadfromMemory) {
+//  // Get naive buffer
+//  auto model_file = std::string(FLAGS_model_dir) + ".opt2.naive.nb";
+//  std::string model_buffer = lite::ReadFile(model_file);
+//  // set model buffer and run model
+//  lite_api::MobileConfig config;
+//  config.set_model_from_buffer(model_buffer);
+//  // allocate 1M initial space for workspace_
+//  config.SetArmL3CacheSize(L3CacheSetMethod::kAbsolute, 1024 * 1024);
+//
+//  auto predictor = lite_api::CreatePaddlePredictor(config);
+//  auto input_tensor = predictor->GetInput(0);
+//  input_tensor->Resize(std::vector<int64_t>({100, 100}));
+//  auto* data = input_tensor->mutable_data<float>();
+//  for (int i = 0; i < 100 * 100; i++) {
+//    data[i] = i;
+//  }
+//
+//  predictor->Run();
+//
+//  const auto output = predictor->GetOutput(0);
+//  const float* raw_output = output->data<float>();
+//
+//  for (int i = 0; i < 10; i++) {
+//    LOG(INFO) << "out " << raw_output[i];
+//  }
+//}
 
 #endif
 

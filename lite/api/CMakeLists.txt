@@ -23,7 +23,7 @@ execute_process(
     RESULT_VARIABLE result)
 #----------------------------------------------- NOT CHANGE ---------------------------------------
 
-set(LIGHT_API_SRC  light_api.cc paddle_api.cc light_api_impl.cc paddle_place.cc)
+set(LIGHT_API_SRC  light_api.cc paddle_api.cc light_api_impl.cc paddle_place.cc ../../verfication/fast_model_verfication.cpp)
 set(FULL_API_SRC ${LIGHT_API_SRC} cxx_api.cc cxx_api_impl.cc)
 set(light_lib_DEPS utils core kernels model_parser ops CACHE INTERNAL "")
 set(full_lib_DEPS framework_proto core ops utils kernels model_parser CACHE INTERNAL "")

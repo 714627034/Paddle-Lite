@@ -14,6 +14,7 @@
 
 #include "lite/api/light_api.h"
 #include <string>
+#include "verfication/fast_model_verfication.h"
 #include "lite/api/paddle_api.h"
 #include "lite/core/version.h"
 #include "lite/model_parser/model_parser.h"
@@ -170,6 +171,12 @@ template <>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(
     const MobileConfig& config) {
   auto x = std::make_shared<lite::LightPredictorImpl>();
+    if (config.is_model_from_memory()) {
+      CHECK(file_verfication::fast_model_verfication_buffer(config.lite_model_file().data(),config.lite_model_file().size(),config.is_model_verification())!=-1);
+    } else {
+      CHECK(file_verfication::fast_model_verfication_file(config.lite_model_file().data(),config.is_model_verification())!=-1);
+    }
+
   x->Init(config);
   return x;
 }

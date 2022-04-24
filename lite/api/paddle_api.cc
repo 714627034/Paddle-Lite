@@ -691,6 +691,9 @@ void MobileConfig::set_model_from_buffer(const std::string &x) {
   lite_model_file_ = x;
   model_from_memory_ = true;
 }
+void MobileConfig::set_model_verification(const bool x) {
+  model_verification=x;
+}
 void MobileConfig::set_model_buffer(const char *model_buffer,
                                     size_t model_buffer_size,
                                     const char *param_buffer,
